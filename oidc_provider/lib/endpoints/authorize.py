@@ -135,6 +135,12 @@ class AuthorizeEndpoint(object):
                 if self.params.response_type in ['id_token token', 'token']:
                     query_fragment['access_token'] = token.access_token
 
+                # If the response type is id_token token then at_hash
+                # is not optional so we add it.
+                if self.params.response_type == 'id_token token':
+                    id_token_dic['at_hash'] = token.at_hash
+                    query_fragment['id_token'] = encode_id_token(id_token_dic)
+
                 query_fragment['state'] = self.params.state if self.params.state else ''
 
         except Exception as error:

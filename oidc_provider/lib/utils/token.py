@@ -11,7 +11,8 @@ from jwkest.jws import JWS
 from oidc_provider.lib.utils.common import get_issuer
 from oidc_provider.models import *
 from oidc_provider import settings
-
+import hashlib
+import base64
 
 def create_id_token(user, aud, nonce):
     """
@@ -83,10 +84,16 @@ def create_token(user, client, id_token_dic, scope):
     token = Token()
     token.user = user
     token.client = client
-    token.access_token = uuid.uuid4().hex
+    raw_uuid = uuid.uuid4()
+    token.access_token = raw_uuid.hex
+
+    # next 3 lines is the code to create our at_hash
+    ascii_representation_access_token = raw_uuid.hex
+    hashed_token = hashlib.sha256(ascii_representation_access_token)
+    id_token_dic['at_hash'] = base64.urlsafe_b64encode(hashed_token.digest()[:16])
 
     token.id_token = id_token_dic
-
+    token.at_hash = id_token_dic['at_hash']
     token.refresh_token = uuid.uuid4().hex
     token.expires_at = timezone.now() + timedelta(
         seconds=settings.get('OIDC_TOKEN_EXPIRE'))
